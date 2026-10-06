@@ -1,0 +1,39 @@
+package com.cosmocats.marketplace.web;
+
+import com.cosmocats.marketplace.domain.Product;
+import com.cosmocats.marketplace.web.dto.ProductRequest;
+import com.cosmocats.marketplace.web.dto.ProductResponse;
+import org.springframework.stereotype.Component;
+
+import java.time.Instant;
+import java.util.UUID;
+
+/** Manual mapper (boilerplate on purpose). Bonus: replace with a MapStruct @Mapper. */
+@Component
+public class ProductMapper {
+
+    public ProductResponse toDto(Product product) {
+        return new ProductResponse(
+                product.id(),
+                product.name(),
+                product.description(),
+                product.price(),
+                product.stock(),
+                product.categoryId(),
+                product.sellerEmail(),
+                product.createdAt());
+    }
+
+    /** Creates a brand-new domain object: generates the id and the creation time. */
+    public Product toDomain(ProductRequest request) {
+        return new Product(
+                UUID.randomUUID(),
+                request.name().trim(),
+                request.description(),
+                request.price(),
+                request.stock(),
+                request.categoryId(),
+                request.sellerEmail(),
+                Instant.now());
+    }
+}
