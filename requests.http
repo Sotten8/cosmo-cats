@@ -1,0 +1,51 @@
+### 1. List products (page 0, size 2)
+GET http://localhost:8080/api/products?page=0&size=2
+
+### 2. Create a valid product
+POST http://localhost:8080/api/products
+Content-Type: application/json
+
+{
+  "name": "Galaxy Brain Scratching Post",
+  "description": "Tall enough to reach the Milky Way",
+  "price": 49.90,
+  "stock": 15,
+  "categoryId": 1,
+  "sellerEmail": "posts@cosmo-cats.market"
+}
+
+### 3. Invalid product -> 400 problem+json (price 0, no cosmic word, bad email)
+POST http://localhost:8080/api/products
+Content-Type: application/json
+
+{
+  "name": "Plain Mouse Toy",
+  "price": 0,
+  "stock": 1,
+  "categoryId": 1,
+  "sellerEmail": "not-an-email"
+}
+
+### 4. Get by id (copy an id from request 1)
+GET http://localhost:8080/api/products/00000000-0000-0000-0000-000000000000
+
+### 5. Bad page size -> 400
+GET http://localhost:8080/api/products?size=0
+
+### 6. Malformed JSON -> 400
+POST http://localhost:8080/api/products
+Content-Type: application/json
+
+{ "name": 
+
+### 7. Delete (copy an id from request 1)
+DELETE http://localhost:8080/api/products/00000000-0000-0000-0000-000000000000
+
+### 8. Delivery estimate -> 200 (needs WireMock: ./gradlew wiremockRun). Use a real product id from request 1
+GET http://localhost:8080/api/products/00000000-0000-0000-0000-000000000000/delivery-estimate?destination=Mars
+
+### 9. Upstream 503 (Pluto) -> 502 problem+json;  Jupiter = upstream timeout -> 502
+GET http://localhost:8080/api/products/00000000-0000-0000-0000-000000000000/delivery-estimate?destination=Pluto
+
+### 10. Missing destination -> 400
+GET http://localhost:8080/api/products/00000000-0000-0000-0000-000000000000/delivery-estimate

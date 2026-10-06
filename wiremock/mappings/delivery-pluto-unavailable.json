@@ -1,0 +1,12 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/delivery/estimate",
+    "queryParameters": { "destination": { "equalTo": "Pluto", "caseInsensitive": true } }
+  },
+  "response": {
+    "status": 503,
+    "headers": { "Content-Type": "application/json" },
+    "jsonBody": { "error": "Pluto courier is on strike" }
+  }
+}
