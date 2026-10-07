@@ -7,11 +7,6 @@ plugins {
 group = "com.cosmocats"
 version = "0.0.1-SNAPSHOT"
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
-}
-
 repositories {
     mavenCentral()
 }
@@ -32,6 +27,8 @@ dependencies {
 }
 
 tasks.withType<JavaCompile> {
+    // Compile against the Java 21 API even when Gradle runs on a newer JDK (sourceCompatibility alone does not)
+    options.release.set(21)
     options.compilerArgs.add("-parameters")
 }
 

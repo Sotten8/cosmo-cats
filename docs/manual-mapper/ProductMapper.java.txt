@@ -1,14 +1,22 @@
-package com.cosmocats.marketplace.web;
+package com.cosmocats.marketplace.web.mapper;
 
-import com.cosmocats.marketplace.domain.Product;
-import com.cosmocats.marketplace.web.dto.ProductRequest;
-import com.cosmocats.marketplace.web.dto.ProductResponse;
+import com.cosmocats.marketplace.domain.common.PageResult;
+import com.cosmocats.marketplace.domain.model.Money;
+import com.cosmocats.marketplace.domain.model.Product;
+import com.cosmocats.marketplace.web.dto.request.CreateProductRequest;
+import com.cosmocats.marketplace.web.dto.request.UpdateProductRequest;
+import com.cosmocats.marketplace.web.dto.response.PageResponse;
+import com.cosmocats.marketplace.web.dto.response.ProductResponse;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.UUID;
 
-/** Manual mapper (boilerplate on purpose). Bonus: replace with a MapStruct @Mapper. */
+/**
+ * Manual mapper (boilerplate on purpose). It behaves exactly like the MapStruct ProductMapper:
+ * the name is trimmed, the price is built from amount + currency, sellerEmail is not exposed.
+ * To use it instead of MapStruct, put it into web/mapper and delete the @Mapper interface.
+ */
 @Component
 public class ProductMapper {
 
@@ -17,23 +25,45 @@ public class ProductMapper {
                 product.id(),
                 product.name(),
                 product.description(),
-                product.price(),
+                product.price().amount(),
+                product.price().currency(),
                 product.stock(),
                 product.categoryId(),
-                product.sellerEmail(),
                 product.createdAt());
     }
 
     /** Creates a brand-new domain object: generates the id and the creation time. */
-    public Product toDomain(ProductRequest request) {
+    public Product toDomain(CreateProductRequest request) {
         return new Product(
                 UUID.randomUUID(),
                 request.name().trim(),
                 request.description(),
-                request.price(),
+                new Money(request.price(), request.currency()),
                 request.stock(),
                 request.categoryId(),
                 request.sellerEmail(),
                 Instant.now());
+    }
+
+    /** The service keeps the real id and createdAt of the stored product and copies only the editable fields. */
+    public Product toDomain(UpdateProductRequest request) {
+        return new Product(
+                UUID.randomUUID(),
+                request.name().trim(),
+                request.description(),
+                new Money(request.price(), request.currency()),
+                request.stock(),
+                request.categoryId(),
+                request.sellerEmail(),
+                Instant.now());
+    }
+
+    public PageResponse<ProductResponse> toPageResponse(PageResult<Product> page) {
+        return new PageResponse<>(
+                page.items().stream().map(this::toDto).toList(),
+                page.page(),
+                page.size(),
+                page.totalElements(),
+                page.totalPages());
     }
 }
