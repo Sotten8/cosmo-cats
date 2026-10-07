@@ -3,7 +3,7 @@ info:
   title: Cosmo Cats Intergalactic Marketplace API
   description: >
     API contract for the Cosmo Cats marketplace (anti-gravity yarn balls, cosmic milk and more).
-    Errors follow RFC 9457 (application/problem+json).
+    All endpoints are versioned in the path (/api/v1). Errors follow RFC 9457 (application/problem+json).
   version: 1.0.0
 servers:
   - url: http://localhost:8080
@@ -11,14 +11,18 @@ servers:
 tags:
   - name: Products
     description: CRUD operations over products
+  - name: Delivery
+    description: Delivery estimates from a 3rd-party service
 
 paths:
-  /api/products:
+  /api/v1/products:
     get:
       tags: [Products]
       operationId: listProducts
       summary: Get a page of products
-      description: Returns a paged envelope. Page index is zero-based.
+      description: >
+        Returns a paged envelope. Page index is zero-based. Products are ordered by creation time,
+        then by name, then by id, so pages never overlap.
       parameters:
         - name: page
           in: query
@@ -57,7 +61,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProductRequest'
+              $ref: '#/components/schemas/CreateProductRequest'
       responses:
         '201':
           description: Product created
@@ -73,10 +77,12 @@ paths:
                 $ref: '#/components/schemas/ProductResponse'
         '400':
           $ref: '#/components/responses/ValidationError'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /api/products/{id}:
+  /api/v1/products/{id}:
     parameters:
       - name: id
         in: path
@@ -111,7 +117,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProductRequest'
+              $ref: '#/components/schemas/UpdateProductRequest'
       responses:
         '200':
           description: Updated product
@@ -123,6 +129,8 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '500':
           $ref: '#/components/responses/InternalError'
     delete:
@@ -139,20 +147,16 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /api/products/{id}/delivery-estimate:
+  /api/v1/delivery-estimates:
     get:
-      tags: [Products]
+      tags: [Delivery]
       operationId: getDeliveryEstimate
-      summary: Estimate delivery of a product to a destination
-      description: Calls a 3rd-party delivery service. If it fails or times out, 502 is returned.
+      summary: Estimate delivery to a destination
+      description: >
+        Calls a 3rd-party delivery service. The estimate depends only on the destination.
+        If the service answers with an error or is unreachable, 502 is returned; if it does not answer
+        in time, 504 is returned.
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: Product identifier
-          schema:
-            type: string
-            format: uuid
         - name: destination
           in: query
           required: true
@@ -171,54 +175,105 @@ paths:
                 $ref: '#/components/schemas/DeliveryEstimate'
         '400':
           $ref: '#/components/responses/ValidationError'
-        '404':
-          $ref: '#/components/responses/NotFound'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
         '500':
           $ref: '#/components/responses/InternalError'
 
 components:
   schemas:
-    ProductRequest:
+    CreateProductRequest:
       type: object
-      required: [name, price, stock, categoryId]
+      additionalProperties: false
+      required: [name, price, currency, stock, categoryId]
       properties:
         name:
           type: string
           minLength: 3
           maxLength: 100
-          pattern: '(?i).*(star|galaxy|comet|cosmic|nebula|orbit|planet|moon|space|gravity|asteroid|meteor|nova|void).*'
-          description: Must contain a cosmic term (star, galaxy, comet, ...)
+          pattern: '(?i)(^|[^A-Za-z0-9])(star|galaxy|comet|cosmic|nebula|orbit|planet|moon|space|gravity|asteroid|meteor|nova|void)([^A-Za-z0-9]|$)'
+          description: >
+            Must contain a cosmic term (star, galaxy, comet, ...) as a whole word, not as a part of another word.
+            Unique among products, ignoring letter case. Leading and trailing spaces are removed.
           example: Star-Dust Anti-Gravity Yarn Ball
         description:
           type: string
           maxLength: 1000
           example: A ball of yarn that floats. Cats approve.
         price:
-          type: number
-          format: decimal
-          exclusiveMinimum: true
-          minimum: 0
-          multipleOf: 0.01
-          description: Price in credits, strictly greater than 0, at most 2 decimal places
-          example: 19.99
+          $ref: '#/components/schemas/Amount'
+        currency:
+          $ref: '#/components/schemas/Currency'
         stock:
           type: integer
           minimum: 0
+          maximum: 100000
           example: 120
         categoryId:
-          type: integer
-          format: int64
-          minimum: 0
-          example: 1
+          type: string
+          format: uuid
+          description: Id of an existing category
+          example: 11111111-1111-1111-1111-111111111111
         sellerEmail:
           type: string
           format: email
           example: yarn@cosmo-cats.market
+    UpdateProductRequest:
+      type: object
+      additionalProperties: false
+      required: [name, price, currency, stock, categoryId]
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 100
+          pattern: '(?i)(^|[^A-Za-z0-9])(star|galaxy|comet|cosmic|nebula|orbit|planet|moon|space|gravity|asteroid|meteor|nova|void)([^A-Za-z0-9]|$)'
+          description: >
+            Must contain a cosmic term (star, galaxy, comet, ...) as a whole word, not as a part of another word.
+            Unique among products, ignoring letter case (the product may keep its own name).
+            Leading and trailing spaces are removed.
+          example: Star-Dust Anti-Gravity Yarn Ball
+        description:
+          type: string
+          maxLength: 1000
+          example: A ball of yarn that floats. Cats approve.
+        price:
+          $ref: '#/components/schemas/Amount'
+        currency:
+          $ref: '#/components/schemas/Currency'
+        stock:
+          type: integer
+          minimum: 0
+          maximum: 100000
+          example: 120
+        categoryId:
+          type: string
+          format: uuid
+          description: Id of an existing category
+          example: 11111111-1111-1111-1111-111111111111
+        sellerEmail:
+          type: string
+          format: email
+          example: yarn@cosmo-cats.market
+    Amount:
+      type: number
+      format: decimal
+      exclusiveMinimum: true
+      minimum: 0
+      maximum: 1000000
+      multipleOf: 0.01
+      description: Amount in the given currency, strictly greater than 0, at most 1000000.00, at most 2 decimal places
+      example: 19.99
+    Currency:
+      type: string
+      pattern: '^[A-Z]{3}$'
+      description: 3-letter uppercase currency code (GCR - Galactic Credit)
+      example: GCR
     ProductResponse:
       type: object
-      required: [id, name, price, stock, categoryId, createdAt]
+      required: [id, name, price, currency, stock, categoryId, createdAt]
       properties:
         id:
           type: string
@@ -231,15 +286,15 @@ components:
         price:
           type: number
           format: decimal
+          example: 19.99
+        currency:
+          type: string
+          example: GCR
         stock:
           type: integer
         categoryId:
-          type: integer
-          format: int64
-        sellerEmail:
           type: string
-          format: email
-          nullable: true
+          format: uuid
         createdAt:
           type: string
           format: date-time
@@ -263,11 +318,8 @@ components:
           type: integer
     DeliveryEstimate:
       type: object
-      required: [productId, destination, etaDays, cost, currency]
+      required: [destination, etaDays, cost, currency]
       properties:
-        productId:
-          type: string
-          format: uuid
         destination:
           type: string
           example: Mars
@@ -283,13 +335,24 @@ components:
           example: GCR
     FieldViolation:
       type: object
-      required: [field, message]
+      required: [field, code, message]
       properties:
         field:
           type: string
+          description: Name of the body field (full path, e.g. price) or of the query/path parameter
           example: price
+        code:
+          type: string
+          description: >
+            Stable machine-readable code, safe to switch on and to translate. Either the name of the violated
+            constraint (NotNull, NotBlank, Size, Min, Max, DecimalMin, DecimalMax, Digits, Pattern, Email,
+            CosmicWordCheck), or one of: TypeMismatch (wrong type of a value), UnknownField (field that is not
+            part of the contract), Required (missing query parameter), CategoryNotFound (categoryId points to
+            nothing). One field is reported at most once.
+          example: DecimalMin
         message:
           type: string
+          description: Human-readable text; may change, do not parse it
           example: must be greater than 0
     ProblemDetail:
       type: object
@@ -311,7 +374,7 @@ components:
           example: "Field 'price' must be greater than 0."
         instance:
           type: string
-          example: /api/products
+          example: /api/v1/products
         errors:
           type: array
           description: Present only for validation errors
@@ -320,13 +383,21 @@ components:
 
   responses:
     ValidationError:
-      description: Invalid request (validation failed, malformed JSON or bad parameter)
+      description: >
+        Invalid request: validation failed, a value has the wrong type, the body has an unknown field or is not
+        valid JSON, a parameter is missing or bad, or the referenced category does not exist
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/ProblemDetail'
     NotFound:
       description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: A product with the same name (ignoring letter case) already exists
       content:
         application/problem+json:
           schema:
@@ -338,7 +409,13 @@ components:
           schema:
             $ref: '#/components/schemas/ProblemDetail'
     BadGateway:
-      description: The 3rd-party service failed, timed out or is unreachable
+      description: The 3rd-party service answered with an error or is unreachable
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    GatewayTimeout:
+      description: The 3rd-party service did not answer in time
       content:
         application/problem+json:
           schema:
