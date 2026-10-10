@@ -7,18 +7,12 @@ plugins {
 group = "com.cosmocats"
 version = "0.0.1-SNAPSHOT"
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
-}
-
 repositories {
     mavenCentral()
 }
 
 val mapstructVersion = "1.6.3"
 
-// Classpath of the standalone WireMock server (3rd-party delivery service stub), used only by `wiremockRun`
 val wiremock by configurations.creating
 
 dependencies {
@@ -32,10 +26,10 @@ dependencies {
 }
 
 tasks.withType<JavaCompile> {
+    options.release.set(21)
     options.compilerArgs.add("-parameters")
 }
 
-// ./gradlew wiremockRun  ->  stub server on http://localhost:8089 (mappings in ./wiremock/mappings)
 tasks.register<JavaExec>("wiremockRun") {
     group = "application"
     description = "Starts WireMock (delivery service stub) on port 8089"
