@@ -63,3 +63,12 @@ and a human-readable `message`.
 | Product name already taken (any letter case) | 409    |
 | Delivery service answered with an error      | 502    |
 | Delivery service timed out                   | 504    |
+
+## Testing
+All test running and coverage check:
+    
+    ./gradlew clean build
+
+Integration tests running:
+
+    ./gradlew integrationTest
