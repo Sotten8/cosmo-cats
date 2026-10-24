@@ -45,10 +45,15 @@ jobs:
           cache-disabled: true
           generate-job-summary: false
 
+      # Add Test summary into actions result
+      - name: Add test summary
+        if: always()
+        run: cat build/reports/tests/test-summary.md >> "$GITHUB_STEP_SUMMARY" || true
+
       # Upload the JaCoCo test coverage report
       - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-coverage-report
-          path: build/reports/coverage/index.html
+          path: build/reports/coverage
