@@ -8,10 +8,12 @@ import com.cosmocats.marketplace.domain.model.Product;
 import com.cosmocats.marketplace.domain.repository.CategoryRepository;
 import com.cosmocats.marketplace.domain.repository.ProductRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
 @Service
+@Transactional
 public class ProductService {
 
     private final ProductRepository products;
@@ -22,24 +24,26 @@ public class ProductService {
         this.categories = categories;
     }
 
+    @Transactional(readOnly = true)
     public PageResult<Product> findAll(int page, int size) {
         return products.findAll(page, size);
     }
 
+    @Transactional(readOnly = true)
     public Product findById(UUID id) {
         return products.findById(id).orElseThrow(() -> new ProductNotFoundException(id));
     }
 
     public Product create(Product product) {
         ensureCategoryExists(product.categoryId());
-        ensureNameIsFree(product.name(), product.id());
+        ensureNameIsFree(product.categoryId(), product.name(), product.id());
         return products.save(product);
     }
 
     public Product update(UUID id, Product incoming) {
         Product existing = findById(id);
         ensureCategoryExists(incoming.categoryId());
-        ensureNameIsFree(incoming.name(), id);
+        ensureNameIsFree(incoming.categoryId(), incoming.name(), id);
         Product updated = new Product(
                 id,
                 incoming.name(),
@@ -64,8 +68,8 @@ public class ProductService {
         }
     }
 
-    private void ensureNameIsFree(String name, UUID ownerId) {
-        products.findByNameIgnoreCase(name)
+    private void ensureNameIsFree(UUID categoryId, String name, UUID ownerId) {
+        products.findByCategoryIdAndNameIgnoreCase(categoryId, name)
                 .filter(other -> !other.id().equals(ownerId))
                 .ifPresent(other -> {
                     throw new DuplicateProductNameException(name);
