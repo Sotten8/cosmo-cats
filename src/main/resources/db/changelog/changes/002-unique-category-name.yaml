@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-unique-category-name
+      author: stanislav
+      changes:
+        - addUniqueConstraint:
+            tableName: category
+            columnNames: name
+            constraintName: uq_category_name

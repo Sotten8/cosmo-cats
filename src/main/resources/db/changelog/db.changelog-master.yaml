@@ -1,0 +1,6 @@
+databaseChangeLog:
+  - include: { file: db/changelog/changes/001-initial-schema.yaml }
+  - include: { file: db/changelog/changes/002-unique-category-name.yaml }
+  - include: { file: db/changelog/changes/003-unique-product-per-category.yaml }
+  - include: { file: db/changelog/changes/004-index-product-name.yaml }
+  - include: { file: db/changelog/changes/005-seed-categories.yaml }

@@ -21,6 +21,9 @@ val wiremock by configurations.creating
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.liquibase:liquibase-core")
+    runtimeOnly("org.postgresql:postgresql")
 
     implementation("org.mapstruct:mapstruct:$mapstructVersion")
     annotationProcessor("org.mapstruct:mapstruct-processor:$mapstructVersion")
@@ -28,9 +31,14 @@ dependencies {
     wiremock("org.wiremock:wiremock-standalone:$wiremockVersion")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.testcontainers:postgresql")
     testImplementation("org.wiremock:wiremock-standalone:$wiremockVersion")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
+
+extra["testcontainers.version"] = "1.21.4"
 
 extra["filesExcludedFromCoverage"] = listOf(
     "**/CosmoCatsApplication*",

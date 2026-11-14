@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-unique-product-per-category
+      author: stanislav
+      changes:
+        - addUniqueConstraint:
+            tableName: product
+            columnNames: "category_id, product_name"
+            constraintName: uq_product_name_per_category

@@ -70,7 +70,7 @@ class ProductServiceTest {
     void createSavesProductWhenCategoryExistsAndNameIsFree() {
         Product newProduct = product();
         when(categories.existsById(newProduct.categoryId())).thenReturn(true);
-        when(products.findByNameIgnoreCase(newProduct.name())).thenReturn(Optional.empty());
+        when(products.findByCategoryIdAndNameIgnoreCase(newProduct.categoryId(), newProduct.name())).thenReturn(Optional.empty());
         when(products.save(newProduct)).thenReturn(newProduct);
 
         Product result = service.create(newProduct);
@@ -95,7 +95,7 @@ class ProductServiceTest {
         Product newProduct = product();
         Product other = product(UUID.randomUUID(), newProduct.name().toUpperCase());
         when(categories.existsById(newProduct.categoryId())).thenReturn(true);
-        when(products.findByNameIgnoreCase(newProduct.name())).thenReturn(Optional.of(other));
+        when(products.findByCategoryIdAndNameIgnoreCase(newProduct.categoryId(), newProduct.name())).thenReturn(Optional.of(other));
 
         assertThatThrownBy(() -> service.create(newProduct))
                 .isInstanceOf(DuplicateProductNameException.class)
@@ -110,7 +110,7 @@ class ProductServiceTest {
                 99, FOOD, "new@cosmo-cats.market", Instant.parse("2030-01-01T00:00:00Z"));
         when(products.findById(existing.id())).thenReturn(Optional.of(existing));
         when(categories.existsById(FOOD)).thenReturn(true);
-        when(products.findByNameIgnoreCase("Cosmic Milk")).thenReturn(Optional.empty());
+        when(products.findByCategoryIdAndNameIgnoreCase(FOOD, "Cosmic Milk")).thenReturn(Optional.empty());
         when(products.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Product result = service.update(existing.id(), incoming);
@@ -134,7 +134,7 @@ class ProductServiceTest {
         Product incoming = product(UUID.randomUUID(), existing.name());
         when(products.findById(existing.id())).thenReturn(Optional.of(existing));
         when(categories.existsById(TOYS)).thenReturn(true);
-        when(products.findByNameIgnoreCase(existing.name())).thenReturn(Optional.of(existing));
+        when(products.findByCategoryIdAndNameIgnoreCase(TOYS, existing.name())).thenReturn(Optional.of(existing));
         when(products.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Product result = service.update(existing.id(), incoming);
@@ -171,7 +171,7 @@ class ProductServiceTest {
         Product incoming = product(UUID.randomUUID(), "Comet Catnip");
         when(products.findById(existing.id())).thenReturn(Optional.of(existing));
         when(categories.existsById(incoming.categoryId())).thenReturn(true);
-        when(products.findByNameIgnoreCase("Comet Catnip")).thenReturn(Optional.of(other));
+        when(products.findByCategoryIdAndNameIgnoreCase(incoming.categoryId(), "Comet Catnip")).thenReturn(Optional.of(other));
 
         assertThatThrownBy(() -> service.update(existing.id(), incoming))
                 .isInstanceOf(DuplicateProductNameException.class);

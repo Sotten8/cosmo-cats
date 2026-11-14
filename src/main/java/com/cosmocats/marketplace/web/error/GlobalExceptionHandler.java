@@ -3,8 +3,12 @@ package com.cosmocats.marketplace.web.error;
 import com.cosmocats.marketplace.application.exception.DeliveryServiceException;
 import com.cosmocats.marketplace.application.exception.DeliveryTimeoutException;
 import com.cosmocats.marketplace.domain.exception.CategoryNotFoundException;
+import com.cosmocats.marketplace.domain.exception.DuplicateCategoryNameException;
 import com.cosmocats.marketplace.domain.exception.DuplicateProductNameException;
+import com.cosmocats.marketplace.domain.exception.InsufficientStockException;
+import com.cosmocats.marketplace.domain.exception.OrderNotFoundException;
 import com.cosmocats.marketplace.domain.exception.ProductNotFoundException;
+import com.cosmocats.marketplace.domain.exception.ResourceInUseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
@@ -50,14 +54,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final List<String> CODE_PRIORITY = List.of("NotNull", "NotBlank", "NotEmpty");
 
-    @ExceptionHandler(ProductNotFoundException.class)
-    public ProblemDetail handleNotFound(ProductNotFoundException ex, HttpServletRequest request) {
+    @ExceptionHandler({ProductNotFoundException.class, OrderNotFoundException.class})
+    public ProblemDetail handleNotFound(RuntimeException ex, HttpServletRequest request) {
         return problem(HttpStatus.NOT_FOUND, "not-found", "Resource not found",
                 ex.getMessage(), request.getRequestURI());
     }
 
-    @ExceptionHandler(DuplicateProductNameException.class)
-    public ProblemDetail handleDuplicateName(DuplicateProductNameException ex, HttpServletRequest request) {
+    @ExceptionHandler({DuplicateProductNameException.class, DuplicateCategoryNameException.class,
+            InsufficientStockException.class, ResourceInUseException.class})
+    public ProblemDetail handleConflict(RuntimeException ex, HttpServletRequest request) {
         return problem(HttpStatus.CONFLICT, "conflict", "Conflict",
                 ex.getMessage(), request.getRequestURI());
     }

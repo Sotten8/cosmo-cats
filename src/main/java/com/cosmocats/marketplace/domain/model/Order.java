@@ -24,4 +24,8 @@ public record Order(
                 .reduce(Money::add)
                 .orElseThrow();
     }
+
+    public String orderNumber() {
+        return id.toString();
+    }
 }
