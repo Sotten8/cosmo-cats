@@ -70,7 +70,7 @@ test {
 }
 
 integrationTest {
-    maxParallelForks = 4
+    maxParallelForks = 1
     filter {
         includeTestsMatching '*IT'
     }

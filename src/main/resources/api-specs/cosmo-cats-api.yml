@@ -196,7 +196,7 @@ components:
           pattern: '(?i)(^|[^A-Za-z0-9])(star|galaxy|comet|cosmic|nebula|orbit|planet|moon|space|gravity|asteroid|meteor|nova|void)([^A-Za-z0-9]|$)'
           description: >
             Must contain a cosmic term (star, galaxy, comet, ...) as a whole word, not as a part of another word.
-            Unique among products, ignoring letter case. Leading and trailing spaces are removed.
+            Unique within its category, ignoring letter case. Leading and trailing spaces are removed.
           example: Star-Dust Anti-Gravity Yarn Ball
         description:
           type: string
@@ -232,7 +232,7 @@ components:
           pattern: '(?i)(^|[^A-Za-z0-9])(star|galaxy|comet|cosmic|nebula|orbit|planet|moon|space|gravity|asteroid|meteor|nova|void)([^A-Za-z0-9]|$)'
           description: >
             Must contain a cosmic term (star, galaxy, comet, ...) as a whole word, not as a part of another word.
-            Unique among products, ignoring letter case (the product may keep its own name).
+            Unique within its category, ignoring letter case (the product may keep its own name).
             Leading and trailing spaces are removed.
           example: Star-Dust Anti-Gravity Yarn Ball
         description:
@@ -397,7 +397,7 @@ components:
           schema:
             $ref: '#/components/schemas/ProblemDetail'
     Conflict:
-      description: A product with the same name (ignoring letter case) already exists
+      description: A product with the same name (ignoring letter case) already exists in that category
       content:
         application/problem+json:
           schema:

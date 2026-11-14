@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-index-product-name
+      author: stanislav
+      changes:
+        - createIndex:
+            indexName: idx_product_product_name
+            tableName: product
+            columns:
+              - column: { name: product_name }

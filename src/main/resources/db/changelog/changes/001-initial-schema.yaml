@@ -1,0 +1,136 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-sequences
+      author: stanislav
+      changes:
+        - createSequence: { sequenceName: category_id_seq,   startValue: 1, incrementBy: 1 }
+        - createSequence: { sequenceName: product_id_seq,    startValue: 1, incrementBy: 1 }
+        - createSequence: { sequenceName: orders_id_seq,     startValue: 1, incrementBy: 1 }
+        - createSequence: { sequenceName: order_item_id_seq, startValue: 1, incrementBy: 1 }
+
+  - changeSet:
+      id: 001-create-category
+      author: stanislav
+      changes:
+        - createTable:
+            tableName: category
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  constraints: { primaryKey: true, primaryKeyName: pk_category, nullable: false }
+              - column:
+                  name: public_id
+                  type: UUID
+                  constraints: { nullable: false, unique: true, uniqueConstraintName: uq_category_public_id }
+              - column: { name: name, type: "VARCHAR(100)", constraints: { nullable: false } }
+
+  - changeSet:
+      id: 001-create-product
+      author: stanislav
+      changes:
+        - createTable:
+            tableName: product
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  constraints: { primaryKey: true, primaryKeyName: pk_product, nullable: false }
+              - column:
+                  name: public_id
+                  type: UUID
+                  constraints: { nullable: false, unique: true, uniqueConstraintName: uq_product_public_id }
+              - column:
+                  name: category_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_product_category
+                    references: category(id)
+              - column: { name: product_name, type: "VARCHAR(150)", constraints: { nullable: false } }
+              - column: { name: description, type: "VARCHAR(1000)" }
+              - column: { name: price, type: "NUMERIC(12,2)", constraints: { nullable: false } }
+              - column: { name: currency, type: "VARCHAR(3)", constraints: { nullable: false } }
+              - column: { name: stock_quantity, type: INTEGER, defaultValueNumeric: 0, constraints: { nullable: false } }
+              - column: { name: seller_email, type: "VARCHAR(255)" }
+              - column: { name: created_at, type: "TIMESTAMP WITH TIME ZONE", defaultValueComputed: CURRENT_TIMESTAMP, constraints: { nullable: false } }
+
+  - changeSet:
+      id: 001-create-orders
+      author: stanislav
+      changes:
+        - createTable:
+            tableName: orders
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  constraints: { primaryKey: true, primaryKeyName: pk_orders, nullable: false }
+              - column:
+                  name: order_number
+                  type: "VARCHAR(36)"
+                  constraints: { nullable: false, unique: true, uniqueConstraintName: uq_orders_order_number }
+              - column: { name: customer_id, type: UUID }
+              - column: { name: status, type: "VARCHAR(20)", constraints: { nullable: false } }
+              - column: { name: created_at, type: "TIMESTAMP WITH TIME ZONE", defaultValueComputed: CURRENT_TIMESTAMP, constraints: { nullable: false } }
+
+  - changeSet:
+      id: 001-create-order-item
+      author: stanislav
+      changes:
+        - createTable:
+            tableName: order_item
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  constraints: { primaryKey: true, primaryKeyName: pk_order_item, nullable: false }
+              - column:
+                  name: order_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_order_item_order
+                    references: orders(id)
+                    deleteCascade: true
+              - column:
+                  name: product_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_order_item_product
+                    references: product(id)
+              - column: { name: quantity, type: INTEGER, constraints: { nullable: false } }
+              - column: { name: unit_price, type: "NUMERIC(12,2)", constraints: { nullable: false } }
+              - column: { name: currency, type: "VARCHAR(3)", constraints: { nullable: false } }
+        - addUniqueConstraint:
+            tableName: order_item
+            columnNames: "order_id, product_id"
+            constraintName: uq_order_item_order_product
+
+  - changeSet:
+      id: 001-check-constraints
+      author: stanislav
+      changes:
+        - sql:
+            sql: >
+              ALTER TABLE product ADD CONSTRAINT ck_product_price_non_negative CHECK (price >= 0);
+              ALTER TABLE product ADD CONSTRAINT ck_product_stock_non_negative CHECK (stock_quantity >= 0);
+              ALTER TABLE order_item ADD CONSTRAINT ck_order_item_quantity_positive CHECK (quantity > 0);
+              ALTER TABLE order_item ADD CONSTRAINT ck_order_item_unit_price_non_negative CHECK (unit_price >= 0);
+      rollback:
+        - sql:
+            sql: >
+              ALTER TABLE order_item DROP CONSTRAINT ck_order_item_unit_price_non_negative;
+              ALTER TABLE order_item DROP CONSTRAINT ck_order_item_quantity_positive;
+              ALTER TABLE product DROP CONSTRAINT ck_product_stock_non_negative;
+              ALTER TABLE product DROP CONSTRAINT ck_product_price_non_negative;
+
+  - changeSet:
+      id: 001-indexes
+      author: stanislav
+      changes:
+        - createIndex: { indexName: idx_product_category_id,   tableName: product,    columns: [ { column: { name: category_id } } ] }
+        - createIndex: { indexName: idx_order_item_order_id,   tableName: order_item, columns: [ { column: { name: order_id } } ] }
+        - createIndex: { indexName: idx_order_item_product_id, tableName: order_item, columns: [ { column: { name: product_id } } ] }
+        - createIndex: { indexName: idx_orders_status,         tableName: orders,     columns: [ { column: { name: status } } ] }
