@@ -1,5 +1,6 @@
 package com.cosmocats.marketplace;
 
+import com.cosmocats.marketplace.support.AbstractPostgresTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
@@ -33,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class MarketplaceIT {
+class MarketplaceIT extends AbstractPostgresTest {
 
     private static final String PRODUCTS = "/api/v1/products";
     private static final String DELIVERY = "/api/v1/delivery-estimates";
@@ -97,7 +98,11 @@ class MarketplaceIT {
     }
 
     @Test
-    void listContainsSeededProductsAndSupportsPaging() throws Exception {
+    void listSupportsPaging() throws Exception {
+        createProduct("Paging Comet One");
+        createProduct("Paging Comet Two");
+        createProduct("Paging Comet Three");
+
         mockMvc.perform(get(PRODUCTS).param("page", "0").param("size", "2"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(2))
@@ -107,11 +112,22 @@ class MarketplaceIT {
     }
 
     @Test
-    void duplicateNameIsRejectedIgnoringCase() throws Exception {
+    void duplicateNameInSameCategoryIsRejectedIgnoringCase() throws Exception {
+        createProduct("Cosmic Milk 1L");
+
         mockMvc.perform(post(PRODUCTS).contentType(MediaType.APPLICATION_JSON)
-                        .content(body("COSMIC MILK 1L", FOOD)))
+                        .content(body("COSMIC MILK 1L", TOYS)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.type").value("https://cosmo-cats.market/errors/conflict"));
+    }
+
+    @Test
+    void sameNameInAnotherCategoryIsAllowed() throws Exception {
+        createProduct("Shared Star Name");
+
+        mockMvc.perform(post(PRODUCTS).contentType(MediaType.APPLICATION_JSON)
+                        .content(body("Shared Star Name", FOOD)))
+                .andExpect(status().isCreated());
     }
 
     @Test
@@ -125,10 +141,11 @@ class MarketplaceIT {
 
     @Test
     void updatingToAnotherProductsNameIsRejected() throws Exception {
-        String id = createProduct("Integration Nebula Ball");
+        createProduct("Integration Nebula Ball");
+        String id = createProduct("Integration Nova Ball");
 
         mockMvc.perform(put(PRODUCTS + "/" + id).contentType(MediaType.APPLICATION_JSON)
-                        .content(body("cosmic milk 1l", TOYS)))
+                        .content(body("integration nebula ball", TOYS)))
                 .andExpect(status().isConflict());
     }
 
